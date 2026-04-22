@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, abort, request
 from data import db_session
 from data.users import User
+from data.basket import Basket
 from forms.user import RegisterForm
 from flask_login import LoginManager
 from forms.login import LoginForm
@@ -24,9 +25,32 @@ def load_user(user_id):
 @app.route('/')
 def index():
     db_sess = db_session.create_session()
-    products = db_sess.query(Product).filter(Product.is_published == True).all()
-    db_sess.close() 
-    return render_template('index.html', title='Главная', products=products)
+    products = db_sess.query(Product).filter(Product.is_published == True, 
+                                             Product.is_deleted == False).all()
+    
+    basket_data = {}
+    if current_user.is_authenticated:
+        items = db_sess.query(Basket).filter(Basket.user_id == current_user.id).all()
+        basket_data = {item.product_id: item.quantity for item in items}
+        
+    return render_template('index.html', products=products, basket_data=basket_data)
+
+@app.route('/remove_one/<int:product_id>')
+@login_required
+def remove_one(product_id):
+    db_sess = db_session.create_session()
+    item = db_sess.query(Basket).filter(Basket.product_id == product_id, 
+                                        Basket.user_id == current_user.id).first()
+    if item:
+        item.product.quantity += 1
+        if item.quantity > 1:
+            item.quantity -= 1
+        else:
+            db_sess.delete(item)
+            
+        db_sess.commit()
+        
+    return redirect('/')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -106,25 +130,19 @@ def drafts():
     products = db_sess.query(Product).filter(Product.is_published == False).all()
     return render_template('index.html', title='Черновики', products=products)
 
-@app.route('/delete_product/<int:id>', methods=['GET', 'POST'])
+@app.route('/delete_product/<int:id>')
 @login_required
 def delete_product(id):
-    db_sess = db_session.create_session()
-
-    product = db_sess.query(Product).filter(Product.id == id).first()
+    if not current_user.is_admin:
+        abort(403)
     
+    db_sess = db_session.create_session()
+    product = db_sess.query(Product).get(id)
     if product:
-        
-        if current_user.is_admin:
-            db_sess.delete(product)
-            db_sess.commit()
-        else:
-            abort(403)
-    else:
-        
-        abort(404)
-        
+        product.is_deleted = True
+        db_sess.commit()
     return redirect('/')
+
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_product(id):
@@ -139,12 +157,11 @@ def edit_product(id):
         abort(404)
 
     if request.method == "GET":
-        # Заполняем текстовые поля данными из базы
+       
         form.title.data = product.title
         form.description.data = product.description
         form.price.data = product.price
         form.quantity.data = product.quantity
-        # СТРОКУ С is_published УДАЛЯЕМ, так как в твоем классе формы ее нет
 
     if form.validate_on_submit():
         product.title = form.title.data
@@ -152,7 +169,7 @@ def edit_product(id):
         product.price = form.price.data
         product.quantity = form.quantity.data
         
-        # ЛОГИКА КНОПОК: проверяем, какая из кнопок была нажата
+        
         if form.submit_publish.data:
             product.is_published = True
         elif form.submit_draft.data:
@@ -162,6 +179,57 @@ def edit_product(id):
         return redirect('/')
         
     return render_template('add_product.html', title='Редактирование товара', form=form)
+
+@app.route('/cart')
+@login_required
+def cart():
+    db_sess = db_session.create_session()
+    
+    basket_items = db_sess.query(Basket).filter(Basket.user_id == current_user.id).all()
+    
+  
+    total_price = sum(item.product.price * item.quantity for item in basket_items)
+    
+    return render_template('cart.html', title='Корзина', 
+                           basket=basket_items, total_price=total_price)
+
+@app.route('/add_to_cart/<int:product_id>')
+@login_required
+def add_to_cart(product_id):
+    db_sess = db_session.create_session()
+    product = db_sess.query(Product).filter(Product.id == product_id).first()
+    
+    if product and product.quantity > 0:
+        product.quantity -= 1
+        
+        item = db_sess.query(Basket).filter(Basket.product_id == product_id, 
+                                            Basket.user_id == current_user.id).first()
+        if item:
+            item.quantity += 1
+        else:
+            new_item = Basket(product_id=product_id, user_id=current_user.id)
+            db_sess.add(new_item)
+        db_sess.commit()
+        
+    return redirect('/')
+@app.route('/delete_from_cart/<int:basket_id>')
+@login_required
+def delete_from_cart(basket_id):
+    db_sess = db_session.create_session()
+
+    item = db_sess.query(Basket).filter(Basket.id == basket_id, 
+                                        Basket.user_id == current_user.id).first()
+    
+    if item:
+        item.product.quantity += item.quantity
+        
+        db_sess.delete(item)
+        db_sess.commit()
+        
+        
+        
+    return redirect('/cart')
+
 if __name__ == '__main__':
     db_session.global_init('db/shop.db')
     db_sess = db_session.create_session()

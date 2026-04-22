@@ -31,13 +31,25 @@
 
                     {% if item.is_published %}
                         {% if not current_user.is_authenticated %}
-                            <a href="/login" class="btn btn-success w-100 mb-2">
+                            <a href="/login" class="btn btn-success w-100 mb-2 {% if item.quantity == 0 %}disabled{% endif %}">
                                 <i class="bi bi-cart-plus"></i> Купить
                             </a>
                         {% elif not current_user.is_admin %}
-                            <button class="btn btn-success w-100 mb-2" disabled>
-                                <i class="bi bi-cart-plus"></i> Купить
-                            </button>
+                            {% if item.id in basket_data and basket_data[item.id] > 0 %}
+                                <div class="d-flex align-items-center justify-content-between mb-2 border rounded p-1">
+                                    <a href="/remove_one/{{ item.id }}" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-dash-lg"></i>
+                                    </a>
+                                    <span class="h6 mb-0">{{ basket_data[item.id] }} шт.</span>
+                                    <a href="/add_to_cart/{{ item.id }}" class="btn btn-outline-success btn-sm {% if item.quantity == 0 %}disabled{% endif %}">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </a>
+                                </div>
+                            {% else %}
+                                <a href="/add_to_cart/{{ item.id }}" class="btn btn-success w-100 mb-2 {% if item.quantity == 0 %}disabled{% endif %}">
+                                    <i class="bi bi-cart-plus"></i> Купить
+                                </a>
+                            {% endif %}
                         {% endif %}
 
                         {% if current_user.is_authenticated and current_user.is_admin %}
