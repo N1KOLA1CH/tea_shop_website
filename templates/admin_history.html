@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h3 class="mb-4">Глобальные логи покупок</h3>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Товар</th>
+                    <th>Кол-во</th>
+                    <th>Дата</th>
+                    <th>Остаток на счету</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.user.email }}</td>
+                    <td>{{ order.product.title }}</td>
+                    <td>{{ order.quantity }} шт.</td>
+                    <td>{{ order.purchase_date.strftime('%d.%m %H:%M:%S') }}</td>
+                    <td class="fw-bold text-success">{{ order.user.balance }} ₽</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container border p-4 rounded bg-light">
+    <h2 class="mb-4 text-center">Проверьте ваш заказ</h2>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Кол-во</th>
+                <th>Цена</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in basket %}
+            <tr>
+                <td>{{ item.product.title }}</td>
+                <td>{{ item.quantity }} шт.</td>
+                <td>{{ item.product.price * item.quantity }} ₽</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-end mt-4">
+        <h4>Итого к оплате: <span class="text-primary">{{ total }} ₽</span></h4>
+        <p>Ваш баланс: <strong>{{ current_user.balance }} ₽</strong></p>
+        
+        <form action="/pay_order" method="post" class="d-inline">
+            <a href="/cart" class="btn btn-secondary">Вернуться и изменить</a>
+            <button type="submit" class="btn btn-success btn-lg">Подтвердить и оплатить</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

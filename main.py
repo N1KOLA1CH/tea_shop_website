@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, abort, request
+from flask import Flask, render_template, redirect, abort, request, flash
 from data import db_session
 from data.users import User
 from data.basket import Basket
@@ -7,6 +7,7 @@ from flask_login import LoginManager
 from forms.login import LoginForm
 from flask_login import login_user, logout_user, login_required, current_user
 from data.products import Product
+from data.orders import Order
 from forms.product import ProductForm
 
 app = Flask(__name__)
@@ -32,7 +33,7 @@ def index():
     if current_user.is_authenticated:
         items = db_sess.query(Basket).filter(Basket.user_id == current_user.id).all()
         basket_data = {item.product_id: item.quantity for item in items}
-        
+     
     return render_template('index.html', products=products, basket_data=basket_data)
 
 @app.route('/remove_one/<int:product_id>')
@@ -49,7 +50,7 @@ def remove_one(product_id):
             db_sess.delete(item)
             
         db_sess.commit()
-        
+       
     return redirect('/')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -83,16 +84,20 @@ def login():
         user = db_sess.query(User).filter(User.email == form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
+            
             return redirect("/")
+        
         return render_template('login.html',
                                message='Неправильный логин или пароль',
                                form=form)
+    
     return render_template('login.html', title='Авторизация', form=form)
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
+    
     return redirect("/")
 
 @app.route('/add_product', methods=['GET', 'POST'])
@@ -114,12 +119,16 @@ def add_product():
         )
         db_sess.add(product)
         db_sess.commit()
-        db_sess.close()
+        
         if is_published:
+            
             return redirect('/')
         else:
+            
             return redirect('/drafts')
+    
     return render_template('add_product.html', title='Добавление товара', form=form)
+
 @app.route('/drafts')
 @login_required
 def drafts():
@@ -128,6 +137,7 @@ def drafts():
     db_sess = db_session.create_session()
     # только не опубликованные товары
     products = db_sess.query(Product).filter(Product.is_published == False).all()
+    
     return render_template('index.html', title='Черновики', products=products)
 
 @app.route('/delete_product/<int:id>')
@@ -141,6 +151,7 @@ def delete_product(id):
     if product:
         product.is_deleted = True
         db_sess.commit()
+    
     return redirect('/')
 
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
@@ -177,7 +188,7 @@ def edit_product(id):
             
         db_sess.commit()
         return redirect('/')
-        
+      
     return render_template('add_product.html', title='Редактирование товара', form=form)
 
 @app.route('/cart')
@@ -210,8 +221,9 @@ def add_to_cart(product_id):
             new_item = Basket(product_id=product_id, user_id=current_user.id)
             db_sess.add(new_item)
         db_sess.commit()
-        
+       
     return redirect('/')
+
 @app.route('/delete_from_cart/<int:basket_id>')
 @login_required
 def delete_from_cart(basket_id):
@@ -225,10 +237,82 @@ def delete_from_cart(basket_id):
         
         db_sess.delete(item)
         db_sess.commit()
-        
-        
-        
+   
     return redirect('/cart')
+@app.route('/confirm_order')
+@login_required
+def confirm_order():
+    db_sess = db_session.create_session()
+    basket_items = db_sess.query(Basket).filter(Basket.user_id == current_user.id).all()
+    
+    if not basket_items:
+       
+        return redirect('/cart')
+
+    total_price = sum(item.product.price * item.quantity for item in basket_items)
+    
+  
+    return render_template('confirm_order.html', 
+                           title='Подтверждение заказа', 
+                           basket=basket_items, 
+                           total=total_price)
+
+from flask import flash, redirect, url_for # Добавь flash в импорты
+
+@app.route('/pay_order', methods=['POST'])
+@login_required
+def pay_order():
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(current_user.id)
+    basket_items = db_sess.query(Basket).filter(Basket.user_id == current_user.id).all()
+    
+    if not basket_items:
+        return redirect('/cart')
+
+    total_price = sum(item.product.price * item.quantity for item in basket_items)
+
+    if user.balance >= total_price:
+        user.balance -= total_price
+        for item in basket_items:
+            order = Order(
+                user_id=user.id,
+                product_id=item.product_id,
+                quantity=item.quantity,
+                price_at_purchase=item.product.price
+            )
+            db_sess.add(order)
+            db_sess.delete(item)
+        db_sess.commit()
+        
+        flash("Покупка успешно совершена!", "success") 
+        return redirect('/profile')
+    else:
+        
+        flash(f"Недостаточно средств! Нужно {total_price} ₽, а у вас {user.balance} ₽", "danger")
+        return redirect('/cart')
+
+@app.route('/profile')
+@login_required
+def profile():
+    db_sess = db_session.create_session()
+    orders = db_sess.query(Order).filter(Order.user_id == current_user.id).order_by(Order.purchase_date.desc()).all()
+   
+    return render_template('profile.html', title='Личный кабинет', orders=orders)
+
+@app.route('/admin/history')
+@login_required
+def admin_history():
+    if not current_user.is_admin:
+       
+        return redirect('/')
+    db_sess = db_session.create_session()
+    orders = db_sess.query(Order).order_by(Order.purchase_date.desc()).all()
+   
+    return render_template('admin_history.html', title='Логи покупок', orders=orders)
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.create_session().close()
 
 if __name__ == '__main__':
     db_session.global_init('db/shop.db')

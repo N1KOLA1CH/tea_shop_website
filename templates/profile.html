@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h3>Аккаунт: {{ current_user.email }}</h3>
+            <h5 class="text-primary">Баланс: {{ current_user.balance }} ₽</h5>
+        </div>
+    </div>
+
+    <h4>История ваших покупок</h4>
+    <div class="table-responsive mt-3">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Дата</th>
+                    <th>Товар</th>
+                    <th>Кол-во</th>
+                    <th>Цена за шт.</th>
+                    <th>Итого</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.purchase_date.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>{{ order.product.title }}</td>
+                    <td>{{ order.quantity }} шт.</td>
+                    <td>{{ order.price_at_purchase }} ₽</td>
+                    <td>{{ order.price_at_purchase * order.quantity }} ₽</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
