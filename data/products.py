@@ -10,4 +10,5 @@ class Product(SqlAlchemyBase):
     price = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
     quantity = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     is_deleted = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
+    image_data = sqlalchemy.Column(sqlalchemy.BLOB)
     is_published = sqlalchemy.Column(sqlalchemy.Boolean, default=True)

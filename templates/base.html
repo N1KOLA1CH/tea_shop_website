@@ -5,6 +5,7 @@
     <link rel="stylesheet" 
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>{{title}}</title>
 </head>
 <body>
@@ -17,10 +18,6 @@
                 <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
                 
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/profile">Профиль</a>
-                    </li>
-                    
                     {% if current_user.is_admin %}
                         <li class="nav-item">
                             <a class="nav-link text-warning" href="/admin/history">Логи</a>
@@ -31,21 +28,29 @@
                         <li class="nav-item">
                             <a class="nav-link text-success" href="/add_product">+ Добавить товар</a>
                         </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/profile">Профиль</a>
+                        </li>
                     {% endif %}
                 {% endif %}
             </ul>
-            
+
             <ul class="navbar-nav ms-auto align-items-center">
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link px-3" href="/cart">
-                            <i class="bi bi-cart3"></i> Корзина
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <span class="nav-link" style="color: gold;">{{ current_user.balance }} ₽</span>
-                    </li>
+                    {% if not current_user.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link px-3" href="/cart">
+                                {% if cart_items_count > 0 %}
+                                    <span class="badge bg-danger rounded-pill">{{ cart_items_count }}</span>
+                                {% endif %}
+                                <i class="bi bi-cart3"></i> Корзина
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <span class="nav-link" style="color: gold;">{{ current_user.balance }} ₽</span>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="/logout">{{ current_user.name }} (Выйти)</a>
                     </li>

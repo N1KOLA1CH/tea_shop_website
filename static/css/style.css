@@ -1,0 +1,78 @@
+/* Контейнер для кнопок */
+.btn-container {
+    display: flex;
+    width: 100%;
+    height: 60px; /* Высота как на скриншотах */
+    overflow: hidden;
+    border-radius: 16px; /* Закругление всего блока */
+}
+
+/* Общий стиль для кнопок-блоков */
+.shop-btn-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    transition: filter 0.2s;
+    border: none;
+    color: white !important;
+}
+
+.shop-btn-block:hover {
+    filter: brightness(0.9);
+}
+
+.shop-btn-label {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+
+/* Синяя кнопка "В корзину" (Скриншот 2) */
+.btn-blue {
+    background-color: #005bff; /* Насыщенный синий */
+    width: 100%;
+    border-radius: 16px;
+}
+
+/* Зеленая часть "В корзине" (Скриншот 1) */
+.btn-green {
+    background-color: #10c44c; /* Яркий зеленый */
+    width: 65%;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Темная часть с качелькой (Скриншот 1) */
+.stepper-bg {
+    background-color: #242426; /* Почти черный */
+    width: 35%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.stepper-btn {
+    color: #005bff; /* Синие значки + и - */
+    font-size: 1.5rem;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 0 5px;
+}
+
+.stepper-value {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Отключение кнопок, если товара 0 */
+.shop-btn-block.disabled, .stepper-btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}

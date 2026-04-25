@@ -9,6 +9,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from data.products import Product
 from data.orders import Order
 from forms.product import ProductForm
+import base64
+from forms.user import DepositForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -23,17 +25,27 @@ def load_user(user_id):
     db_sess.close()
     return user
 
+
 @app.route('/')
 def index():
     db_sess = db_session.create_session()
-    products = db_sess.query(Product).filter(Product.is_published == True, 
+    products = db_sess.query(Product).filter(Product.is_published == True,
                                              Product.is_deleted == False).all()
-    
+
+
+    for item in products:
+        if item.image_data:
+
+            item.img_str = base64.b64encode(item.image_data).decode('utf-8')
+        else:
+            item.img_str = None
+
+
     basket_data = {}
     if current_user.is_authenticated:
         items = db_sess.query(Basket).filter(Basket.user_id == current_user.id).all()
         basket_data = {item.product_id: item.quantity for item in items}
-     
+
     return render_template('index.html', products=products, basket_data=basket_data)
 
 @app.route('/remove_one/<int:product_id>')
@@ -53,6 +65,16 @@ def remove_one(product_id):
        
     return redirect('/')
 
+@app.context_processor
+def inject_cart_count():
+    if current_user.is_authenticated:
+        db_sess = db_session.create_session()
+        try:
+            count = db_sess.query(Basket).filter(Basket.user_id == current_user.id).count()
+            return dict(cart_items_count=count)
+        finally:
+            db_sess.close()
+    return dict(cart_items_count=0)
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -82,6 +104,11 @@ def login():
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.email == form.email.data).first()
+        if not user:
+
+            return render_template('login.html',
+                                   message='Такого пользователя не существует',
+                                   form=form)
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             
@@ -100,6 +127,7 @@ def logout():
     
     return redirect("/")
 
+
 @app.route('/add_product', methods=['GET', 'POST'])
 def add_product():
     if not current_user.is_admin:
@@ -107,9 +135,8 @@ def add_product():
     form = ProductForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        is_published = False
-        if form.submit_publish.data and form.quantity.data > 0:
-            is_published = True
+        is_published = form.submit_publish.data and form.quantity.data > 0
+
         product = Product(
             title=form.title.data,
             description=form.description.data,
@@ -117,17 +144,16 @@ def add_product():
             quantity=form.quantity.data,
             is_published=is_published
         )
+
+        if form.image.data:
+            product.image_data = form.image.data.read()
+
         db_sess.add(product)
         db_sess.commit()
-        
-        if is_published:
-            
-            return redirect('/')
-        else:
-            
-            return redirect('/drafts')
-    
+        return redirect('/') if is_published else redirect('/drafts')
+
     return render_template('add_product.html', title='Добавление товара', form=form)
+
 
 @app.route('/drafts')
 @login_required
@@ -135,9 +161,12 @@ def drafts():
     if not current_user.is_admin:
         abort(403)
     db_sess = db_session.create_session()
-    # только не опубликованные товары
     products = db_sess.query(Product).filter(Product.is_published == False).all()
-    
+
+
+    for item in products:
+        item.img_str = base64.b64encode(item.image_data).decode('utf-8') if item.image_data else None
+
     return render_template('index.html', title='Черновики', products=products)
 
 @app.route('/delete_product/<int:id>')
@@ -154,21 +183,21 @@ def delete_product(id):
     
     return redirect('/')
 
+
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_product(id):
     if not current_user.is_admin:
         abort(403)
-        
+
     form = ProductForm()
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
-    
+
     if not product:
         abort(404)
 
     if request.method == "GET":
-       
         form.title.data = product.title
         form.description.data = product.description
         form.price.data = product.price
@@ -179,15 +208,16 @@ def edit_product(id):
         product.description = form.description.data
         product.price = form.price.data
         product.quantity = form.quantity.data
-        
-        
-        if form.submit_publish.data:
-            product.is_published = True
-        elif form.submit_draft.data:
-            product.is_published = False
-            
+
+        if form.image.data:
+            product.image_data = form.image.data.read()
+
+        product.is_published = True if form.submit_publish.data else False
+
         db_sess.commit()
         return redirect('/')
+
+    return render_template('add_product.html', title='Редактирование товара', form=form)
       
     return render_template('add_product.html', title='Редактирование товара', form=form)
 
@@ -257,7 +287,6 @@ def confirm_order():
                            basket=basket_items, 
                            total=total_price)
 
-from flask import flash, redirect, url_for # Добавь flash в импорты
 
 @app.route('/pay_order', methods=['POST'])
 @login_required
@@ -309,6 +338,22 @@ def admin_history():
     orders = db_sess.query(Order).order_by(Order.purchase_date.desc()).all()
    
     return render_template('admin_history.html', title='Логи покупок', orders=orders)
+@app.route('/deposit', methods=['GET', 'POST'])
+@login_required
+def deposit():
+    form = DepositForm()
+    db_sess = db_session.create_session()
+
+    if form.validate_on_submit():
+
+        user = db_sess.query(User).get(current_user.id)
+        user.balance += form.amount.data
+        db_sess.commit()
+
+        flash(f"Баланс успешно пополнен на {form.amount.data} ₽!", "success")
+        return redirect('/profile')
+
+    return render_template('deposit.html', title='Пополнение баланса', form=form)
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
