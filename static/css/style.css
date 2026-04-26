@@ -1,78 +1,77 @@
-/* Контейнер для кнопок */
+
 .btn-container {
     display: flex;
     width: 100%;
-    height: 60px; /* Высота как на скриншотах */
+    height: 54px;
     overflow: hidden;
-    border-radius: 16px; /* Закругление всего блока */
+    border-radius: 16px;
+    margin-top: auto;
 }
 
-/* Общий стиль для кнопок-блоков */
+
 .shop-btn-block {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-decoration: none;
-    transition: filter 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
     border: none;
     color: white !important;
+    cursor: pointer;
 }
 
-.shop-btn-block:hover {
-    filter: brightness(0.9);
-}
-
-.shop-btn-label {
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.2;
+.shop-btn-block:active {
+    transform: scale(0.98);
 }
 
 
-/* Синяя кнопка "В корзину" (Скриншот 2) */
 .btn-blue {
-    background-color: #005bff; /* Насыщенный синий */
+    background-color: #005bff;
     width: 100%;
-    border-radius: 16px;
 }
 
-/* Зеленая часть "В корзине" (Скриншот 1) */
+
 .btn-green {
-    background-color: #10c44c; /* Яркий зеленый */
+    background-color: #10c44c;
     width: 65%;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-radius: 0;
 }
 
-/* Темная часть с качелькой (Скриншот 1) */
+
 .stepper-bg {
-    background-color: #242426; /* Почти черный */
+    background-color: #242426;
     width: 35%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    padding: 0 10px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+    height: 100%;
 }
 
 .stepper-btn {
-    color: #005bff; /* Синие значки + и - */
-    font-size: 1.5rem;
-    font-weight: 500;
+    color: #005bff;
+    font-size: 1.4rem;
+    font-weight: bold;
     text-decoration: none;
-    padding: 0 5px;
+    transition: opacity 0.2s;
+    line-height: 1;
+}
+
+.stepper-btn:hover {
+    color: #3380ff;
 }
 
 .stepper-value {
     color: white;
     font-size: 1.1rem;
     font-weight: 600;
+    min-width: 20px;
+    text-align: center;
 }
 
-/* Отключение кнопок, если товара 0 */
-.shop-btn-block.disabled, .stepper-btn.disabled {
-    opacity: 0.5;
+
+.disabled {
+    filter: grayscale(1);
+    opacity: 0.6;
     pointer-events: none;
 }

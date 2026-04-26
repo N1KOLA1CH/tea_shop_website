@@ -8,16 +8,36 @@
     {% endif %}
 </div>
 
+<div class="mb-5">
+    <div class="d-flex flex-wrap gap-2 justify-content-center">
+        {% set tea_types = ['Все', 'Белый', 'Зелёный', 'Жёлтый', 'Красный', 'Чёрный'] %}
+
+        {% for t_type in tea_types %}
+            <a href="{{ url_for('index', tea_type=t_type) }}"
+               class="btn btn-sm rounded-pill px-4 shadow-sm
+               {% if selected_type == t_type or (t_type == 'Все' and not selected_type) %}
+                    btn-primary
+               {% else %}
+                    btn-outline-secondary
+               {% endif %}">
+               {{ t_type }}
+            </a>
+        {% endfor %}
+    </div>
+</div>
+
 <div class="row">
     {% for item in products %}
     <div class="col-md-4 mb-4">
         <div class="card h-100 shadow-sm border-0" style="border-radius: 20px; overflow: hidden;">
 
             {% if item.img_str %}
-                <img src="data:image/jpeg;base64,{{ item.img_str }}"
-                     class="card-img-top"
-                     alt="{{ item.title }}"
-                     style="height: 200px; object-fit: cover;">
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                    <img src="data:image/jpeg;base64,{{ item.img_str }}"
+                         class="card-img-top"
+                         alt="{{ item.title }}"
+                         style="max-height: 200px; width: auto; max-width: 100%; object-fit: contain;">
+                </div>
             {% else %}
                 <div class="bg-light text-muted d-flex align-items-center justify-content-center" style="height: 200px;">
                     <i class="bi bi-camera" style="font-size: 2.5rem;"></i>
@@ -27,9 +47,31 @@
             <div class="card-body d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <h5 class="card-title mb-0">{{ item.title }}</h5>
+                    {% if item.tea_type %}
+                        <span class="badge rounded-pill
+                            {% if item.tea_type == 'Зелёный' %}bg-success
+                            {% elif item.tea_type == 'Чёрный' %}bg-dark
+                            {% elif item.tea_type == 'Красный' %}bg-danger
+                            {% elif item.tea_type == 'Белый' %}bg-light text-dark border
+                            {% elif item.tea_type == 'Жёлтый' %}bg-warning text-dark
+                            {% else %}bg-secondary{% endif %}">
+                            {{ item.tea_type }}
+                        </span>
+                    {% endif %}
                 </div>
 
-                <p class="card-text text-muted flex-grow-1">{{ item.description }}</p>
+                <div class="mb-2">
+                    {% if item.average_rating > 0 %}
+                        <span class="text-warning" style="font-weight: bold;">
+                            <i class="bi bi-star-fill"></i> {{ item.average_rating }}
+                        </span>
+                        <small class="text-muted">({{ item.ratings_count }} чел.)</small>
+                    {% else %}
+                        <small class="text-muted">Нет оценок</small>
+                    {% endif %}
+                </div>
+
+                <p class="card-text text-muted flex-grow-1 small">{{ item.description }}</p>
 
                 <div class="mt-3">
                     <div class="d-flex justify-content-between align-items-center mb-3">

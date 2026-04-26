@@ -7,7 +7,7 @@
         <table class="table table-striped align-middle">
             <thead class="table-dark">
                 <tr>
-                    <th>Пользователь</th>
+                    <th>Фото</th> <th>Пользователь</th>
                     <th>Товар</th>
                     <th>Кол-во</th>
                     <th>Дата</th>
@@ -17,8 +17,19 @@
             <tbody>
                 {% for order in orders %}
                 <tr>
+                    <td>
+                        {% if order.product.img_str %}
+                            <img src="data:image/jpeg;base64,{{ order.product.img_str }}"
+                                 style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px;">
+                        {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center text-muted"
+                                 style="width: 45px; height: 45px; border-radius: 8px;">
+                                <i class="bi bi-camera" style="font-size: 0.9rem;"></i>
+                            </div>
+                        {% endif %}
+                    </td>
                     <td>{{ order.user.email }}</td>
-                    <td>{{ order.product.title }}</td>
+                    <td class="fw-bold">{{ order.product.title }}</td>
                     <td>{{ order.quantity }} шт.</td>
                     <td>{{ order.purchase_date.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td class="fw-bold text-success">{{ order.user.balance }} ₽</td>

@@ -18,6 +18,12 @@
             </div>
 
             <div class="mb-3">
+                {{ form.tea_type.label(class="form-label") }}
+                {{ form.tea_type(class="form-select") }}
+            </div>
+
+
+            <div class="mb-3">
                 {{ form.price.label(class="form-label") }}
                 {{ form.price(class="form-control", type="number") }}
             </div>
