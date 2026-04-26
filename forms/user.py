@@ -12,6 +12,6 @@ class RegisterForm(FlaskForm):
 class DepositForm(FlaskForm):
     amount = IntegerField('Сумма пополнения (₽)', validators=[
         DataRequired(message="Введите сумму"),
-        NumberRange(min=10, message="Минимальная сумма — 10 ₽")
+        NumberRange(min=10, message="Минимальная сумма — 10 ₽", max=1000000)
     ])
     submit = SubmitField('Пополнить баланс')

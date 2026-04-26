@@ -87,7 +87,7 @@ def remove_one(product_id):
 
         db_sess.commit()
 
-    return redirect('/')
+    return redirect(request.referrer or '/')
 
 
 @app.context_processor
@@ -284,7 +284,7 @@ def add_to_cart(product_id):
             db_sess.add(new_item)
         db_sess.commit()
 
-    return redirect('/')
+    return redirect(request.referrer or '/')
 
 
 @app.route('/delete_from_cart/<int:basket_id>')
@@ -449,4 +449,4 @@ if __name__ == '__main__':
         db_sess.add(admin)
         db_sess.commit()
     db_sess.close()
-    app.run(port=8080, host='0.0.0.0')
+    app.run(port=8080, host='127.0.0.1')
