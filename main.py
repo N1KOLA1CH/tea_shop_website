@@ -449,4 +449,4 @@ if __name__ == '__main__':
         db_sess.add(admin)
         db_sess.commit()
     db_sess.close()
-    app.run(port=8080, host='127.0.0.1')
+    app.run(port=5000, host='0.0.0.0')
