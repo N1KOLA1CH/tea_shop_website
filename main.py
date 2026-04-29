@@ -13,7 +13,7 @@ from forms.product import ProductForm
 import base64
 from flask_restful import Api
 from api import products_resource
-
+import requests 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
@@ -435,10 +435,29 @@ def rate_product(order_id, value):
 def shutdown_session(exception=None):
     db_session.create_session().close()
     
+
 @app.route('/test_ip')
 def test_ip():
+    #
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    return f"Твой текущий IP в сети: {ip}"
+    
+
+    try:
+       
+        info = requests.get(f"http://ip-api.com/json/{ip}?lang=ru", timeout=5).json()
+        
+        if info.get('status') == 'success':
+            res = (f"Твой IP: {ip}<br>"
+                   f"Страна: {info.get('country')}<br>"
+                   f"Город: {info.get('city')}<br>"
+                   f"Провайдер: {info.get('isp')}")
+        else:
+            res = f"Твой IP: {ip} (Не удалось определить локацию)"
+            
+    except Exception as e:
+        res = f"Твой IP: {ip} (Ошибка сервиса локации: {e})"
+        
+    return res
 
 if __name__ == '__main__':
     db_session.global_init('db/shop.db')
