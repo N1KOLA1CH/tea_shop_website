@@ -434,7 +434,11 @@ def rate_product(order_id, value):
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.create_session().close()
-
+    
+@app.route('/test_ip')
+def test_ip():
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    return f"Твой текущий IP в сети: {ip}"
 
 if __name__ == '__main__':
     db_session.global_init('db/shop.db')
